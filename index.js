@@ -2,13 +2,7 @@ var Service, Characteristic;
 var request = require("request");
 
 
-const COOKER_ENDPOINT = (id, secretKey, requestKey) => (
-  `https://api.anovaculinary.com/cookers/${encodeURIComponent(id)}?secret=${secretKey}&requestKey=${requestKey}`
-);
-
-const JOBS_ENDPOINT = (id, secretKey, requestKey) => (
-  `https://api.anovaculinary.com/cookers/${encodeURIComponent(id)}/jobs?secret=${secretKey}&requestKey=${requestKey}`
-);
+const COOKER_ENDPOINT = "http://localhost:5000";
 
 module.exports = function(homebridge){
   Service = homebridge.hap.Service;
@@ -96,18 +90,18 @@ AnovaCooker.prototype = {
 		function setTargetHeatingCoolingState(value) {
 
 			if(value == Characteristic.TargetHeatingCoolingState.COOL || value == Characteristic.TargetHeatingCoolingState.OFF ){
-				return "{ is_running: false }";
+				return "{ \"is_running\": false }";
 			}
 
-			return "{ is_running: true }";
+			return "{ \"is_running\": true }";
 		}
 
 		function setTargetTemperature(value) {
-			return "{ target_temp: ${value} }";
+			return "{ \"target_temp\": "+value+"}";
 		}
 
 		function setTemperatureDisplayUnits(value) {
-			return value == Characteristic.TemperatureDisplayUnits.CELSIUS ? "{ temp_unit: 'c' }" : "{ temp_unit: 'f' }";
+			return value == Characteristic.TemperatureDisplayUnits.CELSIUS ? "{ \"temp_unit\": 'c' }" : "{ \"temp_unit\": 'f' }";
 		}
 		
 		var getDispatch = function (callback, characteristic){
@@ -117,7 +111,7 @@ AnovaCooker.prototype = {
 			var requestKey = new Date().valueOf();
 
 
-			request.get({ url: COOKER_ENDPOINT(this.cooker, this.secret, requestKey)}, function (err, response, body) {
+			request.get({ url: COOKER_ENDPOINT}, function (err, response, body) {
 				
 				if (!err && response.statusCode == 200) {
 
@@ -168,12 +162,11 @@ AnovaCooker.prototype = {
 			switch (actionName) {
 				case "setTargetHeatingCoolingState": body = setTargetHeatingCoolingState(value); break;
 				case "setTargetTemperature": body = setTargetTemperature(value); break;
-				case "setTemperatureDisplayUnits": body = setTemperatureDisplayUnits(value); break;
 				default:
 			}
 			
 			request.post({ 
-				url: COOKER_ENDPOINT(this.cooker, this.secret, new Date().valueOf()), 
+				url: COOKER_ENDPOINT, 
 				headers: { 'Content-Type': 'application/json' },
 	        	body: JSON.stringify(body)
 	        }, function (err, response, body) {
